@@ -1,4 +1,5 @@
 import tensorflow as tf
+import os
 #import keras 
 from keras import optimizers
 from keras.applications.vgg19 import VGG19
@@ -8,6 +9,26 @@ import numpy as np
 from keras.models import Model 
 from keras.layers import Input , Flatten , Dense
 from keras import backend as K
+
+
+input_train01 = 'DATA/Fake/Train/Input01'
+input_train02 = 'DATA/Fake/Train/Input02'
+output_train = 'DATA/Fake/Train/Output'
+
+input_test01 = 'DATA/Fake/Test/Input01'
+input_test02 = 'DATA/Fake/Test/Input02'
+output_test = 'DATA/Fake/Test/Output'
+
+##Preparamos nuestras imagenes
+datagen = image.ImageDataGenerator(rescale=1. / 255)
+
+input_train01 = datagen.flow_from_directory(input_train01,batch_size=32,class_mode='categorical')
+input_train02 = datagen.flow_from_directory(input_train02,batch_size=32,class_mode='categorical')
+output_train = datagen.flow_from_directory(output_train,batch_size=32,class_mode='categorical')
+
+input_test01 = datagen.flow_from_directory(input_test01,batch_size=32,class_mode='categorical')
+input_test02 = datagen.flow_from_directory(input_test02,batch_size=32,class_mode='categorical')
+output_test = datagen.flow_from_directory(output_test,batch_size=32,class_mode='categorical')
 
 #Function to retrieve features from intermediate layers
 def get_activations(model, layer_idx, X_batch):
@@ -57,7 +78,14 @@ def main():
   VL2_model = Model(input = [input_img1 , input_img2], output = prediction)
   
   VL2_model.compile(loss='categorical_crossentropy',optimizer=optimizers.Adam(lr=0.0005),metrics=['accuracy'])
-  VL2_model.fit()
+  VL2_model.fit(x=[input_train01,input_train02],y=output_train,steps_per_epoch=1000,epochs=20,validation_data=[[input_test01,input_test02],output_test],validation_steps=300)
+  
+  target_dir = 'modelo/'
+  if not os.path.exists(target_dir):
+      os.mkdir(target_dir)
+      VL2_model.save('modelo/modelo.h5')
+      VL2_model.save_weights('modelo/pesos.h5')
+
 
 if __name__ == "__main__":
     main()
